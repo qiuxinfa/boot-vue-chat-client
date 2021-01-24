@@ -17,7 +17,7 @@ const store =  new Vuex.Store({
     sessions:{},//聊天记录
     users:[],//用户列表
     currentUser:null,//当前登录用户
-    currentSession:{roomId:'',roomName: '群聊名称',userId: '',username: '',avatar:''},//当前选中的用户，默认为群聊
+    currentSession:{roomId:'',roomName: '',userId: '',username: '',avatar:''},//当前选中的用户，默认为群聊
     currentList:'群聊',//当前聊天窗口列表
     filterKey:'',
     stomp:null,

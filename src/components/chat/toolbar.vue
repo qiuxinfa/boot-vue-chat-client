@@ -10,7 +10,7 @@
     </el-image>
     <div id="btnBar">
       <div class="topBtnBar">
-        <el-tooltip  class="item" effect="dark" content="进入群聊" placement="right">
+        <el-tooltip  class="item" effect="dark" content="群聊列表" placement="right">
 			<el-button @click="chooseChatList('群聊')" class="toolBtn" size="small"><i class="fa fa-comments fa-2x" aria-hidden="true"></i></el-button>
         </el-tooltip>
         <el-tooltip class="item" effect="dark" content="用户列表" placement="right">
@@ -22,7 +22,7 @@
       </div>
       <div class="bottomBtnBar">
         <el-tooltip class="item" effect="dark" content="个人中心" placement="right">
-          <el-button class="toolBtn" size="small"><i class="fa fa-user fa-2x" aria-hidden="true"></i></el-button>
+          <el-button @click="toUserInfo" class="toolBtn" size="small"><i class="fa fa-user fa-2x" aria-hidden="true"></i></el-button>
         </el-tooltip>
         <el-tooltip class="item" effect="dark" content="更多" placement="right">
           <el-popover
@@ -44,6 +44,51 @@
         </el-tooltip>
       </div>
     </div>
+	<!-- 个人中心 -->
+	<el-dialog title="个人信息" :visible.sync="userInfoDialogVisible" width="30%">
+	  <el-form :model="userInfo" status-icon :rules="rules">
+	    <el-form-item label="用户名：" :label-width="formLabelWidth" prop="username">
+	        <el-input :value="userInfo.username" :readonly="true" autocomplete="off"></el-input>
+	    </el-form-item>
+		<el-form-item label="性别：" :label-width="formLabelWidth" prop="sex">
+		    <el-select v-model="userInfo.sex">
+				<el-option v-for="item in sexOptions" :key="item.value" :value="item.value" :label="item.label">
+				</el-option>
+			</el-select>
+		</el-form-item>
+		<el-form-item label="联系电话：" :label-width="formLabelWidth" prop="phone">
+		    <el-input v-model="userInfo.phone" autocomplete="off"></el-input>
+		</el-form-item>
+		<el-form-item label="邮箱：" :label-width="formLabelWidth" prop="email">
+		    <el-input v-model="userInfo.email" autocomplete="off"></el-input>
+		</el-form-item>
+	    <el-form-item label="用户头像：" :label-width="formLabelWidth">
+			<el-image :src="userInfo.avatar"
+								:preview-src-list="[user.avatar]"
+								class="img">
+				<div slot="error" class="image-slot">
+					<i class="el-icon-picture-outline"></i>
+				</div>
+			</el-image>
+			<el-upload
+					class="upload-btn"
+					action="/file"
+					:before-upload="beforeAvatarUpload"
+					:on-success="imgSuccess"
+					:on-error="imgError"
+					:show-file-list="false"
+					accept=".jpg,.jpeg,.png,.JPG,JPEG,.PNG,.gif,.GIF"
+					>
+			  <el-button type="primary">修改头像</el-button>
+			</el-upload>
+	    </el-form-item>
+	  </el-form>
+	  <div slot="footer" class="dialog-footer">
+	    <el-button type="primary" @click="saveUserInfo">保 存</el-button>
+		<el-button @click="userInfoDialogVisible = false">取 消</el-button>
+	  </div>
+	</el-dialog>
+	<!-- 意见反馈 -->
     <el-dialog title="意见反馈" :visible.sync="feedBackDialogVisible" class="feedbackDialog">
       <textarea class="feedbackInput" v-model="feedBackContent">
 
@@ -58,17 +103,83 @@
 
 <script>
 	import {logout} from '@/api/auth.js'
+	import {updateUserInfo} from '@/api/user.js'
 	
   export default {
     name: "toolbar",
     data(){
+		// 手机号验证
+		const validatePhone = (rule, value, callback) => {
+		  if (value === "") {
+		    callback(new Error("请输入手机号"));
+		  } else {
+		    if (!/^1[3456789]\d{9}$/.test(value)) {
+		      callback(new Error("请输入正确的手机号"));
+		    } else {
+		      callback();
+		    }
+		  }
+		 }; 
       return{
         user:JSON.parse(window.sessionStorage.getItem('user')),
+		userInfo:JSON.parse(window.sessionStorage.getItem('user')),
         feedBackDialogVisible:false,
         feedBackContent:'',
+		userInfoDialogVisible: false,
+		formLabelWidth: '120px',
+		sexOptions: [
+			{value:1,label:'男'},
+			{value:2,label:'女'},
+		],
+		// 表单验证
+		rules: {
+		  phone: [{ validator: validatePhone, trigger: "change" }],
+		  email: [
+		    { required: true, message: '请输入邮箱地址' },
+		    { type: 'email', message: '请输入正确的邮箱地址',trigger: 'blur' }
+		  ],
+		},
+		
       }
     },
     methods:{
+	  // 打开个人中心页面
+	  toUserInfo(){
+		 this.userInfoDialogVisible = true; 
+	  },
+	  // 保存个人信息
+	  saveUserInfo(){
+		const that = this;
+		updateUserInfo(this.userInfo).then(res => {
+			that.userInfoDialogVisible = false;
+		}).catch(e => {
+			that.$message({
+			  type: 'error',
+			  message: '保存失败'
+			});
+		})
+		
+	  },
+	  //上传前
+	  beforeAvatarUpload(file) {
+	    //判断图片的格式
+	    let imgType=file.name.substring(file.name.lastIndexOf(".")+1);
+	    imgType=imgType.toLowerCase();
+	    let isImg=imgType==='jpg'|| imgType==='png'|| imgType==='jpeg'||imgType==='gif';
+	     if (!isImg){
+	       this.$message.error('上传图片格式不符合要求！');
+	     }
+	    return isImg;
+	  },
+	  // 图片上传成功
+	  imgSuccess(response, file, fileList) {
+	    console.log("图片url为："+response);
+	    this.userInfo.avatar = response
+	  },
+	  // 图片上传失败
+	  imgError(err, file, fileList){
+	    this.$message.error("上传失败");
+	  },
       //退出系统
       exitSystem(){
         this.$confirm('你是否要退出系统吗?', '系统提示', {

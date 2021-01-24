@@ -5,7 +5,7 @@
 		<p style="padding: 2px 4px;height: 20px">群聊列表</p>
 		<li v-for="room in rooms" :key="room.roomId" :class="{ active: currentSession? room.roomName == currentSession.roomName:false }"
 				v-on:click="changeCurrentSession(room)">
-			<img class="avatar" src="https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1268761962,3976237305&fm=26&gp=0.jpg">
+			<!-- <img class="avatar" src="https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1268761962,3976237305&fm=26&gp=0.jpg"> -->
 			<el-badge :is-dot="isDot[user.id+'#'+room.roomId]"><p class="name">{{room.roomName}}</p></el-badge>
 		</li>
 	</ul>

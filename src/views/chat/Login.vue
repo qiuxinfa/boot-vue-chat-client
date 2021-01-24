@@ -41,6 +41,7 @@
                   action="/file"
                   ref="upload"
                   list-type="picture-card"
+				  accept=".jpg,.jpeg,.png,.JPG,JPEG,.PNG,.gif,.GIF"
                   :class="{disabled:uploadDisabled}"
                   :before-upload="beforeAvatarUpload"
                   :file-list="fileList"

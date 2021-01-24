@@ -1,12 +1,5 @@
 import request from '@/utils/request'
 
-export function getUserInfo() {
-  return request({
-    url: '/user/info',
-    method: 'get'
-  })
-}
-
 export function getUserList(data) {
   return request({
     url: '/user/list',
@@ -21,4 +14,12 @@ export function checkUsername(data) {
 	  method: 'get',
 	  params: data
 	})
+}
+
+export function updateUserInfo(data) {
+  return request({
+    url: '/user/update',
+    method: 'post',
+	data:data
+  })
 }
