@@ -11,14 +11,14 @@
     <div id="btnBar">
       <div class="topBtnBar">
         <el-tooltip  class="item" effect="dark" content="进入群聊" placement="right">
-        <el-button @click="chooseChatList('群聊')" class="toolBtn" size="small"><i class="fa fa-comments fa-2x" aria-hidden="true"></i></el-button>
+			<el-button @click="chooseChatList('群聊')" class="toolBtn" size="small"><i class="fa fa-comments fa-2x" aria-hidden="true"></i></el-button>
         </el-tooltip>
         <el-tooltip class="item" effect="dark" content="用户列表" placement="right">
-        <el-button @click="chooseChatList('私聊')" class="toolBtn" size="small"><i class="fa fa-address-book-o fa-2x" aria-hidden="true"></i></el-button>
+			<el-button @click="chooseChatList('私聊')" class="toolBtn" size="small"><i class="fa fa-address-book-o fa-2x" aria-hidden="true"></i></el-button>
         </el-tooltip>
-        <el-tooltip class="item" effect="dark" content="与机器人聊天" placement="right">
+<!--        <el-tooltip class="item" effect="dark" content="与机器人聊天" placement="right">
           <el-button @click="chooseChatList('机器人')" class="toolBtn" size="small"><i class="fa fa-android fa-2x" aria-hidden="true"></i></el-button>
-        </el-tooltip>
+        </el-tooltip> -->
       </div>
       <div class="bottomBtnBar">
         <el-tooltip class="item" effect="dark" content="个人中心" placement="right">
@@ -57,6 +57,8 @@
 </template>
 
 <script>
+	import {logout} from '@/api/auth.js'
+	
   export default {
     name: "toolbar",
     data(){
@@ -74,12 +76,15 @@
           cancelButtonText: '取消',
           type: 'warning'
         }).then(() => {
-          this.getRequest("/logout");
-          sessionStorage.removeItem("user");
-          //清除SessionStorage中保存的state
-          if (sessionStorage.getItem("state")){
-            sessionStorage.removeItem("state");
-          }
+          logout().then(res => {
+			  sessionStorage.removeItem("user");
+			  //清除SessionStorage中保存的state
+			  if (sessionStorage.getItem("state")){
+			    sessionStorage.removeItem("state");
+			  }
+		  }).catch(e => {
+			  
+		  })
           //关闭连接
           this.$store.dispatch("disconnect");
           this.$router.replace("/");

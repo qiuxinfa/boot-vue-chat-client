@@ -46,59 +46,51 @@ export default {
   },
   computed:mapState([
     'sessions',
+	'chatType',
     'currentSession'
   ]),
   methods: {
     addMessageByClick(){
-      let msgObj=new Object();
-      msgObj.content=this.content;
-      msgObj.messageTypeId=1;
-      //发送群聊消息
-      if (this.currentSession.username=="群聊"){
-        console.log(this.content);
-        this.$store.state.stomp.send("/ws/groupChat",{},JSON.stringify(msgObj));
-      }
-      //给机器人发送消息
-      if (this.currentSession.username=="机器人"){
-        msgObj.fromusername=this.$store.state.currentUser.username;
-        msgObj.to='机器人';
-        this.$store.state.stomp.send("/ws/robotChat",{},JSON.stringify(msgObj));
-        //保存该条记录到session
-        this.$store.commit('addMessage',msgObj);
-      }
-      //发送私聊消息
-      else{
-        msgObj.from=this.$store.state.currentUser.username;
-        msgObj.fromusername=this.$store.state.currentUser.username;
-        msgObj.to=this.currentSession.username;
-        this.$store.state.stomp.send("/ws/chat",{},JSON.stringify(msgObj));
-        //提交私聊消息记录
-        this.$store.commit('addMessage',msgObj);
-      }
-      //清空输入框
-      this.content='';
+		this.sendMsg(1,this.content)
     },
   	addMessage (e) {
   		if (e.ctrlKey && e.keyCode ===13 && this.content.length) {
   		   this.addMessageByClick();
   		}
   	},
+	sendMsg(msgType,msgContent){
+		let msgObj = {};
+		msgObj.content = msgContent;
+		msgObj.fromUserId = this.$store.state.currentUser.id;
+		msgObj.fromUsername = this.$store.state.currentUser.username;
+		msgObj.fromAvatar = this.$store.state.currentUser.avatar;
+		msgObj.createTime = Date.now();
+		// 1文本消息 2图片消息
+		msgObj.msgType = msgType;  
+		//发送群聊消息
+		if (this.chatType == "群聊"){
+			msgObj.roomId = this.currentSession.roomId;
+			msgObj.roomName = this.currentSession.roomName;
+			this.$store.state.stomp.send("/ws/groupChat",{},JSON.stringify(msgObj));
+			msgObj.cacheKey = msgObj.fromUserId + "#" + msgObj.roomId;
+		}
+		//发送私聊消息
+		else{
+		  msgObj.toUserId=this.currentSession.userId;
+		  msgObj.toUsername=this.currentSession.username;
+		  this.$store.state.stomp.send("/ws/chat",{},JSON.stringify(msgObj));
+		  msgObj.cacheKey = msgObj.fromUserId + "#" + msgObj.toUserId;
+		}
+		//提交消息记录
+		this.$store.commit('addMessage',msgObj);
+		//清空输入框
+		this.content='';
+	},
     /**
      *       图片上传的方法
      */
     //上传前
     beforeAvatarUpload(file) {
-      //不给机器人发送图片
-      if (this.currentSession.username=="机器人") {
-        this.$message.error("瓦力拒绝接收你的图片！")
-		return
-      }
-      //判断图片大小
-      // let isLt1M = file.size / 1024 / 1024 < 1;
-      // console.log(file)
-      // if (!isLt1M) {
-      //   this.$message.error('上传图片大小不能超过 1MB!');
-      // }
       //判断图片的格式
       let imgType=file.name.substring(file.name.lastIndexOf(".")+1);
       imgType=imgType.toLowerCase();
@@ -111,20 +103,7 @@ export default {
     // 图片上传成功
     imgSuccess(response, file, fileList) {
       console.log("图片url为："+response);
-      let msgObj=new Object();
-      msgObj.content=response;
-      //设置消息类型为图片
-      msgObj.messageTypeId=2;
-      if (this.currentSession.username=="群聊"){
-        this.$store.state.stomp.send("/ws/groupChat",{},JSON.stringify(msgObj));
-      }else {
-        msgObj.from=this.$store.state.currentUser.username;
-        msgObj.fromusername=this.$store.state.currentUser.username;
-        msgObj.to=this.currentSession.username;
-        this.$store.state.stomp.send("/ws/chat",{},JSON.stringify(msgObj));
-        //提交私聊消息记录
-        this.$store.commit('addMessage',msgObj);
-      }
+      this.sendMsg(2,response)
     },
     // 图片上传失败
     imgError(err, file, fileList){

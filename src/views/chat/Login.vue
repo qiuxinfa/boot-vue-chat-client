@@ -64,6 +64,8 @@
 </template>
 
 <script>
+import {login,userRegister} from '@/api/auth.js'
+import {checkUsername} from '@/api/user.js'
 
   export default {
     name: "Login",
@@ -73,7 +75,7 @@
           callback(new Error('请输入用户名'));
         }
         //检查用户名是否重复
-        this.getRequest("/user/checkUsername?username="+value).then(resp=>{
+        checkUsername({username:value}).then(resp=>{
             if (resp!=0){
               callback(new Error('该用户名已被注册'));
             }
@@ -108,7 +110,7 @@
            password:123456,
            code:''
         },
-        verifyCode:'/user/verifyCode',
+        verifyCode:'/auth/verifyCode',
         checked:true,
         rules: {
           username:[{required:true,message:'请输入用户名',trigger:'blur'}],
@@ -146,12 +148,12 @@
         this.$refs.loginForm.validate((valid) => {
           if (valid) {
             this.fullscreenLoading=true;
-            this.postKeyValueRequest('/user/login',this.loginForm).then(resp=>{
+            login(this.loginForm).then(resp=>{
               setTimeout(()=>{
                 this.fullscreenLoading=false;
               },1000);
               if (resp){
-				  debugger
+				  // debugger
                 //保存当前用户到vuex
                 this.$store.state.currentUser=resp.data;
                 //保存登录用户到sessionStorage中
@@ -169,7 +171,7 @@
         });
       },
       changeverifyCode(){
-        this.verifyCode="/user/verifyCode?time="+new Date();
+        this.verifyCode="/auth/verifyCode?time="+new Date();
       },
       gotoAdminLogin(){
         this.$router.replace("/adminlogin");
@@ -182,12 +184,6 @@
        */
       //上传前
       beforeAvatarUpload(file) {
-        let isLt4M = file.size / 1024 / 1024 < 4;
-
-        if (!isLt4M) {
-          this.$message.error('上传头像图片大小不能超过 4MB!');
-        }
-        return isLt4M;
       },
       // 上传中
       onProgress(event, file, fileList){
@@ -222,7 +218,7 @@
       submitRegisterForm(formName) {
         this.$refs[formName].validate((valid) => {
           if (valid) {
-            this.postRequest("/user/register",this.registerForm).then(resp=>{
+            userRegister(this.registerForm).then(resp=>{
               if (resp){
                 this.registerDialogVisible=false;
                 location.reload();//刷新页面，清空注册界面的上传组件中的图片

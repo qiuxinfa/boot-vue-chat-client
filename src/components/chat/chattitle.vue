@@ -1,13 +1,19 @@
 <template>
   <div class="chatTitle">
-    <span class="titleName">{{this.$store.state.currentSession.username?this.$store.state.currentSession.username:""}}</span>
+    <span class="titleName">{{chatType=='群聊' ? currentSession.roomName : currentSession.username}}</span>
     <el-button class="moreBtn" size="small" icon="el-icon-more"></el-button>
   </div>
 </template>
 
 <script>
+  import {mapState} from 'vuex'
+	
   export default {
-    name: "chattitle"
+    name: "chattitle",
+	computed: mapState([
+	'chatType',
+	'currentSession',
+	]),
   }
 </script>
 

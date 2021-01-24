@@ -1,30 +1,30 @@
 <template>
   <div id="message" v-scroll-bottom="sessions">
-		<div v-if="currentSession&&currentSession.username!='群聊'">
+		<div v-if="chatType == '私聊'">
 			<ul >
-				<li v-for="entry in sessions[user.username+'#'+currentSession.username]">
+				<li v-for="entry in sessions[userChatKey]" :key="entry.msgId">
 					<p class="time">
-						<span>{{entry.date | time}}</span>
+						<span>{{entry.createTime | time}}</span>
 					</p>
-					<div class="main" :class="{self:entry.self}">
-							<p class="username">{{entry.fromusername}}</p>
-						<img class="avatar" :src="entry.self ? user.avatar: currentSession.avatar" alt="">
-						<p v-if="entry.messageTypeId==1" class="text">{{entry.content}}</p>
-							<img v-if="entry.messageTypeId==2" :src="entry.content" class="img">
+					<div class="main" :class="{self:entry.fromUserId == user.id}">
+							<p class="username">{{entry.fromUsername}}</p>
+						<img class="avatar" :src="entry.fromUserId == user.id ? user.avatar: currentSession.avatar" alt="">
+						<p v-if="entry.msgType==1" class="text">{{entry.content}}</p>
+						<img v-if="entry.msgType==2" :src="entry.content" class="img">
 					</div>
 				</li>
 			</ul>
 		</div>
 		<div v-else>
 		<ul>
-			<li v-for="entry in sessions['群聊']" :key="entry.id">
+			<li v-for="entry in sessions[roomChatKey]" :key="entry.msgId">
 				<p class="time">
 					<span>{{entry.createTime | time}}</span>
 				</p>
-				<div class="main" :class="{self:entry.fromId==user.id}">
-					<p class="username">{{entry.fromName}}</p>
-					<img @dblclick="takeAShot" class="avatar" :src="entry.fromId==user.id? user.avatar:entry.fromProfile" alt="">
-					<div v-if="(entry.messageTypeId==1)"><p class="text" v-html="entry.content"></p></div>
+				<div class="main" :class="{self:entry.fromUserId==user.id}">
+					<p class="username">{{entry.fromUsername}}</p>
+					<img @dblclick="takeAShot" class="avatar" :src="entry.fromUserId==user.id? user.avatar:entry.fromAvatar" alt="">
+					<div v-if="(entry.msgType==1)"><p class="text" v-html="entry.content"></p></div>
 					<div v-else>
             <!--图片预览与无法加载图片的图标-->
 						<el-image :src="entry.content"
@@ -49,19 +49,36 @@ export default {
   name: 'message',
   data () {
     return {
-    	user:JSON.parse(window.sessionStorage.getItem('user'))
+    	user:JSON.parse(window.sessionStorage.getItem('user')),
+		userChatKey: '',
+		roomChatKey: '',
     }
+  },
+  watch:{
+	  currentSession(newValue,oldValue){
+		if(this.chatType == '群聊'){
+			console.log("当前的群聊id："+newValue.roomId )
+			this.roomChatKey = this.user.id + "#" + newValue.roomId  
+		}else{
+			console.log("当前的用户id："+newValue.userId )
+			this.userChatKey = this.user.id + "#" + newValue.userId  
+		}
+	  }
   },
   computed:mapState([
   	'sessions',
+	'chatType',
   	'currentSession',
-		'errorImgUrl'
+	'errorImgUrl'
   ]),
   filters:{
   	time (date) {
+		// debugger
       if (date) {
         date = new Date(date);
-      }
+      }else{
+		  date = new Date();
+	  }
       //当前的时间
 			let currentDate=new Date();
       //与当前时间的日期间隔

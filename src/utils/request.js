@@ -4,7 +4,7 @@ import router from '../router'
 
 // create an axios instance
 const service = axios.create({
-  baseURL: '/api', // url = base url + request url
+  baseURL: '', // url = base url + request url
   withCredentials: true, // send cookies when cross-domain requests
   timeout: 60000 // request timeout
 })
@@ -35,7 +35,7 @@ service.interceptors.response.use(
 			Message.error({message:response.data.msg}); 
 		  }
 	  }
-    return response
+    return response.data
   },
   error => {
 	  debugger

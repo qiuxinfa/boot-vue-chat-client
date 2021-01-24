@@ -1,10 +1,9 @@
 import request from '@/utils/request'
 
-export function getUserInfo(token) {
+export function getUserInfo() {
   return request({
     url: '/user/info',
-    method: 'get',
-    params: { token }
+    method: 'get'
   })
 }
 
@@ -14,4 +13,12 @@ export function getUserList(data) {
     method: 'get',
     params: data
   })
+}
+
+export function checkUsername(data) {
+	return request({
+	  url: 'user/checkUsername',
+	  method: 'get',
+	  params: data
+	})
 }

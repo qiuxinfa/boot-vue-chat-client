@@ -4,6 +4,8 @@ import {getRequest} from "../utils/api";
 import SockJS from '../utils/sockjs'
 import  '../utils/stomp'
 import { Notification } from 'element-ui';
+import {getFriendList} from '@/api/friend.js'
+import {getRoomList} from '@/api/room.js'
 
 Vue.use(Vuex)
 
@@ -15,58 +17,73 @@ const store =  new Vuex.Store({
     sessions:{},//聊天记录
     users:[],//用户列表
     currentUser:null,//当前登录用户
-    currentSession:{username:'群聊',username:'群聊'},//当前选中的用户，默认为群聊
+    currentSession:{roomId:'',roomName: '群聊名称',userId: '',username: '',avatar:''},//当前选中的用户，默认为群聊
     currentList:'群聊',//当前聊天窗口列表
     filterKey:'',
     stomp:null,
     isDot:{},//两用户之间是否有未读信息
     errorImgUrl:"http://39.108.169.57/group1/M00/00/00/J2ypOV7wJkyAAv1fAAANuXp4Wt8303.jpg",//错误提示图片
-    shotHistory:{}//拍一拍的记录历史
+    shotHistory:{}, //拍一拍的记录历史
+	friends: [],  // 好友
+	rooms: [],  // 群聊
+	chatType: '群聊',   // 聊天类型
   },
   mutations:{
     initRoutes(state,data){
       state.routes=data;
     },
+	
+	initFriends(state,data){
+		getFriendList().then(res => {
+			// debugger;
+			state.friends=res.data;
+		}).catch(e => {
+			console.log("获取好友列表失败")
+		})
+	},
+	
+	initRooms(state,data){
+		getRoomList().then(res => {
+			state.rooms=res.data;
+		}).catch(e => {
+			console.log("获取群聊列表失败")
+		})
+	},
+	
     changeCurrentSession (state,currentSession) {
+		// debugger
       //切换到当前用户就标识消息已读
-      Vue.set(state.isDot,state.currentUser.username+"#"+currentSession.username,false);
+      if(state.chatType == '群聊'){
+		  Vue.set(state.isDot,state.currentUser.id+"#"+currentSession.roomId,false);
+	  }else{
+		  Vue.set(state.isDot,state.currentUser.id+"#"+currentSession.userId,false);
+	  }
       //更新当前选中的用户
       state.currentSession =currentSession;
     },
     //修改当前聊天窗口列表
     changeCurrentList(state,currentList){
       state.currentList=currentList;
+	  state.chatType = currentList
     },
     //保存群聊消息记录
     addGroupMessage(state,msg){
-      let message=state.sessions['群聊'];
-      if (!message){
-        //state.sessions[state.currentHr.username+"#"+msg.to]=[];
-        Vue.set(state.sessions,'群聊',[]);
-      }
-      state.sessions['群聊'].push({
-        fromId:msg.fromId,
-        fromName:msg.fromName,
-        fromProfile:msg.fromProfile,
-        content:msg.content,
-        messageTypeId:msg.messageTypeId,
-        createTime: msg.createTime,
-      })
+	  // let chatHistoryKey = state.currentUser.id+"#"+state.currentSession.roomId;
+   //    let message=state.sessions[chatHistoryKey];
+   //    if (!message){
+   //      Vue.set(state.sessions,chatHistoryKey,[]);
+   //    }
+   //    state.sessions[chatHistoryKey].push(msg)
     },
     //保存单聊数据
     addMessage (state,msg) {
-      let message=state.sessions[state.currentUser.username+"#"+msg.to];
+      let message=state.sessions[msg.cacheKey];
       if (!message){
         //创建保存消息记录的数组
-        Vue.set(state.sessions,state.currentUser.username+"#"+msg.to,[]);
+        Vue.set(state.sessions,msg.cacheKey,[]);
       }
-      state.sessions[state.currentUser.username+"#"+msg.to].push({
-        content:msg.content,
-        date: new Date(),
-        fromusername:msg.fromusername,
-        messageTypeId:msg.messageTypeId,
-        self:!msg.notSelf
-      })
+	  // 追加聊天记录
+      state.sessions[msg.cacheKey].push(msg)
     },
     /**
      *  获取本地聊天记录，同步数据库的记录保存到localStorage中。
@@ -106,6 +123,10 @@ const store =  new Vuex.Store({
      * @param context
      */
     initData (context) {
+	  // 获取好友列表
+	  context.commit('initFriends')
+	  // 获取群聊列表
+	  context.commit('initRooms')
       //初始化聊天记录
       context.commit('INIT_DATA')
       //获取用户列表
@@ -135,54 +156,56 @@ const store =  new Vuex.Store({
         /**
          * 订阅群聊消息
          */
-        context.state.stomp.subscribe("/topic/greetings",msg=>{
-          //接收到的消息数据
-          let receiveMsg=JSON.parse(msg.body);
-          console.log("收到消息"+receiveMsg);
-          //当前点击的聊天界面不是群聊,默认为消息未读
-          if (context.state.currentSession.username!="群聊"){
-            Vue.set(context.state.isDot,context.state.currentUser.username+"#群聊",true);
-          }
-          //提交消息记录
-          context.commit('addGroupMessage',receiveMsg);
-        });
-        /**
-         * 订阅机器人回复消息
-         */
-        // context.state.stomp.subscribe("/user/queue/robot",msg=>{
-        //   //接收到的消息
-        //   let receiveMsg=JSON.parse(msg.body);
-        //   //标记为机器人回复
-        //   receiveMsg.notSelf=true;
-        //   receiveMsg.to='机器人';
-        //   receiveMsg.messageTypeId=1;
-        //   //添加到消息记录保存
-        //   context.commit('addMessage',receiveMsg);
-        // })
+		let myRooms = context.state.rooms;  // 我的所有群聊
+		if(myRooms && myRooms.length > 0){
+			// 遍历所有的群聊，进行消息订阅
+			for(let i=0;i<myRooms.length;i++){
+				context.state.stomp.subscribe("/topic/rooms/"+myRooms[i].roomId,msg=>{
+					debugger
+				  //接收到的消息数据
+				  let receiveMsg=JSON.parse(msg.body);
+				  receiveMsg.cacheKey = context.state.currentUser.id+"#"+receiveMsg.roomId;
+				  // console.log("收到消息"+receiveMsg);
+				  //当前点击的聊天界面不是群聊,默认为消息未读
+				  let notRead = context.state.currentSession.roomId != receiveMsg.roomId;
+				  if (notRead){
+				    Vue.set(context.state.isDot,receiveMsg.cacheKey,true);
+				  }
+				  // 不是自己发的消息，才将服务端转发的消息进行存储
+				  if(receiveMsg && receiveMsg.fromUserId != context.state.currentUser.id){
+					  //提交消息记录
+					  context.commit('addMessage',receiveMsg);
+				   }
+				});
+			}
+		}
+		
         /**
          * 订阅私人消息
          */
-        context.state.stomp.subscribe('/user/queue/chat',msg=>{
+		// let subAddress = '/user/queue/chat';
+		let subAddress = '/user/'+context.state.currentUser.id+'/chat';
+		debugger
+        context.state.stomp.subscribe(subAddress,msg=>{
+			debugger
           //接收到的消息数据
           let receiveMsg=JSON.parse(msg.body);
+		  receiveMsg.cacheKey = context.state.currentUser.id+"#"+receiveMsg.fromUserId;
           //没有选中用户或选中用户不是发来消息的那一方
-          if (!context.state.currentSession||receiveMsg.from!=context.state.currentSession.username){
+          if (!context.state.currentSession||receiveMsg.fromUserId!=context.state.currentSession.userId){
             Notification.info({
-              title:'【'+receiveMsg.fromusername+'】发来一条消息',
+              title:'【'+receiveMsg.fromUsername+'】发来一条消息',
               message:receiveMsg.content.length<8?receiveMsg.content:receiveMsg.content.substring(0,8)+"...",
               position:"bottom-right"
             });
             //默认为消息未读
-            Vue.set(context.state.isDot,context.state.currentUser.username+"#"+receiveMsg.from,true);
+            Vue.set(context.state.isDot,receiveMsg.cacheKey,true);
           }
-          //标识这个消息不是自己发的
-          receiveMsg.notSelf=true;
-          //获取发送方
-          receiveMsg.to=receiveMsg.from;
-          //提交消息记录
-          context.commit('addMessage',receiveMsg);
+		  //提交消息记录
+		  context.commit('addMessage',receiveMsg);
         })
       },error=>{
+		  debugger;
         Notification.info({
           title: '系统消息',
           message: "无法与服务端建立连接，请尝试重新登陆系统~",
