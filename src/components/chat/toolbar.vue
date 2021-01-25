@@ -40,7 +40,7 @@
           </el-popover>
         </el-tooltip>
         <el-tooltip class="item" effect="dark" content="退出" placement="right">
-        <el-button @click="exitSystem" class="toolBtn" size="small"><i class="fa fa-sign-out fa-2x" aria-hidden="true"></i></el-button>
+			<el-button @click="exitSystem" class="toolBtn" size="small"><i class="fa fa-sign-out fa-2x" aria-hidden="true"></i></el-button>
         </el-tooltip>
       </div>
     </div>

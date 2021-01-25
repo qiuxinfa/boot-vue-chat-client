@@ -6,3 +6,11 @@ export function getFriendList() {
     method: 'get'
   })
 }
+
+export function addFriend(data) {
+  return request({
+    url: '/friend/add',
+    method: 'post',
+	data:data
+  })
+}

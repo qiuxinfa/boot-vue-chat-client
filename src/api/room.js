@@ -6,3 +6,11 @@ export function getRoomList() {
     method: 'get'
   })
 }
+
+export function createRoom(data) {
+  return request({
+    url: '/room/add',
+    method: 'post',
+	data:data
+  })
+}

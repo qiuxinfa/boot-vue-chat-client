@@ -28,7 +28,7 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   response => {
 	  // 后端返回的提示信息
-	  if(response.data && response.data.msg){
+	  if(response.data && response.data.msg && response.data.msg.length > 0){
 		  if (response.data.code == 200){
 		    Message.success({message:response.data.msg});
 		  }else if(response.data.code == 500){
@@ -38,7 +38,7 @@ service.interceptors.response.use(
     return response.data
   },
   error => {
-	  debugger
+	  // debugger
 	  console.log('err' + error) // for debug
 	  // 请求要求用户的身份认证
 	  if (error.response.status==401){

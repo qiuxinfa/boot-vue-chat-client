@@ -108,13 +108,13 @@ const store =  new Vuex.Store({
       state.users=data;
     },
     //请求并保存所有系统用户
-    GET_USERS(state){
-      getRequest("/user/list").then(resp=>{
-        if (resp){
-          state.users=resp.data;
-        }
-      })
-    }
+    // GET_USERS(state){
+    //   getRequest("/user/list").then(resp=>{
+    //     if (resp){
+    //       state.users=resp.data;
+    //     }
+    //   })
+    // }
   },
   actions:{
     /**
@@ -130,7 +130,7 @@ const store =  new Vuex.Store({
       //初始化聊天记录
       context.commit('INIT_DATA')
       //获取用户列表
-      context.commit('GET_USERS')
+      // context.commit('GET_USERS')
     },
     /**
      * 实现连接服务端连接与消息订阅
@@ -151,7 +151,7 @@ const store =  new Vuex.Store({
               position:"top-right"
             });
             //更新用户列表（的登录状态）
-            context.commit('GET_USERS');
+            // context.commit('GET_USERS');
         });
         /**
          * 订阅群聊消息
@@ -161,7 +161,7 @@ const store =  new Vuex.Store({
 			// 遍历所有的群聊，进行消息订阅
 			for(let i=0;i<myRooms.length;i++){
 				context.state.stomp.subscribe("/topic/rooms/"+myRooms[i].roomId,msg=>{
-					debugger
+					// debugger
 				  //接收到的消息数据
 				  let receiveMsg=JSON.parse(msg.body);
 				  receiveMsg.cacheKey = context.state.currentUser.id+"#"+receiveMsg.roomId;
@@ -185,9 +185,9 @@ const store =  new Vuex.Store({
          */
 		// let subAddress = '/user/queue/chat';
 		let subAddress = '/user/'+context.state.currentUser.id+'/chat';
-		debugger
+		// debugger
         context.state.stomp.subscribe(subAddress,msg=>{
-			debugger
+			// debugger
           //接收到的消息数据
           let receiveMsg=JSON.parse(msg.body);
 		  receiveMsg.cacheKey = context.state.currentUser.id+"#"+receiveMsg.fromUserId;
@@ -205,7 +205,7 @@ const store =  new Vuex.Store({
 		  context.commit('addMessage',receiveMsg);
         })
       },error=>{
-		  debugger;
+		  // debugger;
         Notification.info({
           title: '系统消息',
           message: "无法与服务端建立连接，请尝试重新登陆系统~",
