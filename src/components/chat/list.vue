@@ -9,7 +9,7 @@
 			<el-badge :is-dot="isDot[user.id+'#'+room.roomId]"><p class="name">{{room.roomName}}</p></el-badge>
 		</li>
 	</ul>
-    <!--机器人-->
+	<!--机器人-->
 <!-- 	<ul v-if="currentList=='机器人'">
 		<p style="padding: 2px 4px;height: 20px">快来和机器人聊天吧！</p>
 		<li :class="{ active: currentSession?'机器人'== currentSession.username:false }"
@@ -17,49 +17,88 @@
 			<img class="avatar" src="https://ss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=2548892998,499717296&fm=26&gp=0.jpg">
 			<p class="name">瓦力(智能回复)</p>
 		</li>
-	</ul>
- --><!--用户列表-->
+	</ul> -->
+
 	<el-scrollbar wrap-class="userList" wrap-style="height:600px;" view-style="height:100%;" :native="false">
-	<ul v-if="chatType == '私聊'" >
-		<p style="padding: 2px 4px;height: 20px">好友列表</p>
-  		<li v-for="item in friends" :class="{ active: currentSession?item.remark === currentSession.username:false }"
-					v-on:click="changeCurrentSession(item)"><!--   :class="[item.id === currentSession ? 'active':'']" -->
-				<div style="display: flex;justify-content: space-between">
-					<div>
-						<el-badge :is-dot="isDot[user.id+'#'+item.friendId]" style="">
-							<el-image class="avatar"
-												:preview-src-list="[item.avatar]"
-												:src="item.avatar"
-												:alt="item.remark">
-								<div slot="error" class="image-slot">
-									<i class="el-icon-picture-outline"></i>
-								</div>
-							</el-image>
-						</el-badge>
-						<p class="name">{{item.remark}}</p>
+		<!-- 好友列表 -->
+		<ul v-if="chatType == '私聊'">
+			<p style="padding: 2px 4px;height: 20px">好友列表</p>
+			<li v-for="item in friends" :class="{ active: currentSession?item.remark === currentSession.username:false }"
+						v-on:click="changeCurrentSession(item)">
+					<div style="display: flex;justify-content: space-between">
+						<div>
+							<el-badge :is-dot="isDot[user.id+'#'+item.friendId]" style="">
+								<el-image class="avatar"
+													:preview-src-list="[item.avatar]"
+													:src="item.avatar"
+													:alt="item.remark">
+									<div slot="error" class="image-slot">
+										<i class="el-icon-picture-outline"></i>
+									</div>
+								</el-image>
+							</el-badge>
+							<p class="name">{{item.remark}}</p>
+						</div>
+	<!-- 					<div>
+						<el-badge :value="item.status==1?'在线':'离线'" :type="item.status==0?'danger':'info'"></el-badge>
+						</div> -->
 					</div>
-<!-- 					<div>
-					<el-badge :value="item.status==1?'在线':'离线'" :type="item.status==0?'danger':'info'"></el-badge>
-					</div> -->
-				</div>
-  		</li>
-  	</ul>
-		</el-scrollbar>
+			</li>
+		</ul>
+		<!-- 新朋友列表 -->
+		<ul  v-if="chatType == '新朋友'">
+			<p style="padding: 2px 4px;height: 20px">新朋友列表</p>
+			<li v-for="(item,index) in newFriends" :key="item.friendId" :class="{ active: currentIndex == index}" @click="currentIndex=index">
+					<div style="display: flex;justify-content: space-between">
+						<div>
+							<el-image class="avatar"
+									:src="item.avatar"
+									:alt="item.remark">
+							</el-image>
+							<p class="name">{{item.remark}}</p>
+						</div>
+						<div style="float: right;">
+							 <el-button type="primary" size="mini" @click="toAgree">同意</el-button>
+							 <el-button type="primary" size="mini" @click="refuseFriend(item.friendId)">拒绝</el-button>
+						</div>
+					</div>
+			</li>
+		</ul>
+	</el-scrollbar>
+	
+	<!-- 好友备注 -->
+	<el-dialog title="好友备注" :visible.sync="friendRemarkVisible" class="feedbackDialog">
+	  <el-form status-icon>
+		<el-form-item label="好友备注：" label-width="120px">
+			<el-input v-model="friendRemark" placeholder="给好友取个名字吧" autocomplete="off"></el-input>
+		</el-form-item>
+	  </el-form>	
+	  <span slot="footer" class="dialog-footer">
+		<el-button type="primary" @click="agreeFriend">确 定</el-button>
+		<el-button @click="friendRemarkVisible = false">取 消</el-button>
+	  </span>
+	</el-dialog>
+	
   </div>
 </template>
 
 <script>
 import {mapState} from 'vuex'
+import {agree,refuse} from '@/api/friend.js'
 
 export default {
   name: 'list',
   data () {
     return {
 			user:this.$store.state.currentUser,
+			currentIndex: 0,
+			friendRemarkVisible: false,
+			friendRemark: '',  // 给好友的备注
     }
   },
   computed: mapState([
   'friends',
+  'newFriends',
   'rooms',
   'chatType',
   'currentSession',
@@ -85,7 +124,46 @@ export default {
 			param.avatar = item.avatar
 		}
   		this.$store.commit('changeCurrentSession',param)
-  	}
+  	},
+	// 打开好友备注对话框
+	toAgree(){
+		this.friendRemarkVisible = true;
+	},
+	// 同意添加为好友
+	agreeFriend(){
+		let currentFriend = this.newFriends[this.currentIndex];
+		let param = {
+		  userId: this.user.id,
+		  friendId: currentFriend.friendId,
+		  remark: this.friendRemark ? this.friendRemark : currentFriend.remark
+		};
+		const that = this;
+		agree(param).then(res => {
+			// 刷新 新朋友 列表
+			that.$store.commit('initNewFriends');
+			that.friendRemarkVisible = false;
+			// 刷新好友列表
+			that.$store.commit('initFriends');
+		}).catch(e => {
+			
+		})
+	},
+	// 拒绝添加为好友
+	refuseFriend(friendId){
+		let param = {
+		  userId: this.user.id,
+		  friendId: friendId		
+		};
+		const that = this;
+		refuse(param).then(res => {
+			// 刷新 新朋友 列表
+			that.$store.commit('initNewFriends');
+			that.friendRemarkVisible = false;
+		}).catch(e => {
+			
+		})
+	},
+	
   }
 }
 </script>

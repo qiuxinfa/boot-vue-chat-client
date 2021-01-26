@@ -4,7 +4,7 @@ import {getRequest} from "../utils/api";
 import SockJS from '../utils/sockjs'
 import  '../utils/stomp'
 import { Notification } from 'element-ui';
-import {getFriendList} from '@/api/friend.js'
+import {getFriendList,getNewFriendList} from '@/api/friend.js'
 import {getRoomList} from '@/api/room.js'
 
 Vue.use(Vuex)
@@ -27,6 +27,7 @@ const store =  new Vuex.Store({
 	friends: [],  // 好友
 	rooms: [],  // 群聊
 	chatType: '群聊',   // 聊天类型
+	newFriends: [],    // 新朋友列表
   },
   mutations:{
     initRoutes(state,data){
@@ -41,7 +42,14 @@ const store =  new Vuex.Store({
 			console.log("获取好友列表失败")
 		})
 	},
-	
+	initNewFriends(state){
+		getNewFriendList().then(res => {
+			state.newFriends = res.data;
+			// debugger
+		}).catch(e => {
+			console.log("获取新朋友列表失败")
+		})
+	},
 	initRooms(state,data){
 		getRoomList().then(res => {
 			state.rooms=res.data;
@@ -55,16 +63,17 @@ const store =  new Vuex.Store({
       //切换到当前用户就标识消息已读
       if(state.chatType == '群聊'){
 		  Vue.set(state.isDot,state.currentUser.id+"#"+currentSession.roomId,false);
-	  }else{
+	  }else if(state.chatType == '私聊'){
 		  Vue.set(state.isDot,state.currentUser.id+"#"+currentSession.userId,false);
 	  }
       //更新当前选中的用户
       state.currentSession =currentSession;
     },
     //修改当前聊天窗口列表
-    changeCurrentList(state,currentList){
-      state.currentList=currentList;
-	  state.chatType = currentList
+    changeCurrentList(state,listName){
+	  console.log("当前列表名称："+listName)
+      state.currentList=listName;
+	  state.chatType = listName;
     },
     //保存群聊消息记录
     addGroupMessage(state,msg){
@@ -125,6 +134,8 @@ const store =  new Vuex.Store({
     initData (context) {
 	  // 获取好友列表
 	  context.commit('initFriends')
+	  // 获取新朋友列表
+	  context.commit('initNewFriends')
 	  // 获取群聊列表
 	  context.commit('initRooms')
       //初始化聊天记录

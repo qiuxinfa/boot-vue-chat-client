@@ -46,7 +46,7 @@
 			  </el-table>
 		</el-dialog>
 		<!-- 好友备注 -->
-		<el-dialog title="添加好友" :visible.sync="friendRemarkVisible" class="feedbackDialog">
+		<el-dialog title="好友备注" :visible.sync="friendRemarkVisible" class="feedbackDialog">
 		  <el-form status-icon>
 		    <el-form-item label="好友备注：" label-width="120px">
 		        <el-input v-model="friendRemark" placeholder="给好友取个名字吧" autocomplete="off"></el-input>
@@ -122,6 +122,7 @@ export default {
 	  roomData: [],  // 结果列表
 	  friendRemarkVisible: false,
 	  friendId: '',
+	  friendUsername: '',
 	  friendRemark: '', // 好友备注
 	  roomNameVisible: false,
 	  roomName: '',    // 群聊名称
@@ -171,6 +172,8 @@ export default {
 	  
 	  // 好友备注
 	  handleEdit(item){
+		 this.friendId = item.id;
+		 this.friendUsername = item.username;
 		 this.friendRemarkVisible = true;
 	  },
 	  // 群聊名称
@@ -182,10 +185,11 @@ export default {
 		  let param = {
 			  userId: this.user.id,
 			  friendId: this.friendId,
-			  remark: this.friendRemark
+			  remark: this.friendRemark ? this.friendRemark : this.friendUsername
 		  };
 		  const that = this;
 		  addFriend(param).then(res => {
+			  that.friendData = [];
 			  that.friendRemarkVisible = false;
 			  that.friendVisible = false;
 		  }).catch(e => {
@@ -199,6 +203,10 @@ export default {
 			  this.$message.error('请选择群聊用户！');
 			  return;
 		  }
+		  if(!this.roomName){
+			 this.$message.error('群聊名称不能为空！'); 
+			 return;
+		  }
 		  const that = this;
 		  let userIds = '';
 		  for(let i=0;i<this.selectedUsers.length;i++){
@@ -211,6 +219,7 @@ export default {
 			  roomName: this.roomName
 		  };
 		  createRoom(param).then(res => {
+			  that.roomData = [];
 			  that.roomNameVisible = false;
 			  that.roomVisible = false;
 			  // 刷新群聊列表
