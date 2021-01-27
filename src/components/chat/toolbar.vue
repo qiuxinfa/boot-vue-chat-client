@@ -64,7 +64,7 @@
 				</el-option>
 			</el-select>
 		</el-form-item>
-		<el-form-item label="联系电话：" :label-width="formLabelWidth" prop="phone">
+		<el-form-item label="手机号码：" :label-width="formLabelWidth" prop="phone">
 		    <el-input v-model="userInfo.phone" autocomplete="off"></el-input>
 		</el-form-item>
 		<el-form-item label="邮箱：" :label-width="formLabelWidth" prop="email">

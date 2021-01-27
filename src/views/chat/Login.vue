@@ -36,6 +36,12 @@
         <el-form-item label="确认密码：" :label-width="formLabelWidth" prop="checkPass">
           <el-input type="password" v-model="registerForm.checkPass" autocomplete="off"></el-input>
         </el-form-item>
+		<el-form-item label="手机号码：" :label-width="formLabelWidth" prop="phone">
+		    <el-input v-model="registerForm.phone" autocomplete="off"></el-input>
+		</el-form-item>
+		<el-form-item label="邮箱：" :label-width="formLabelWidth" prop="email">
+		    <el-input v-model="registerForm.email" placeholder="方便找回密码" autocomplete="off"></el-input>
+		</el-form-item>
         <el-form-item label="用户头像：" :label-width="formLabelWidth">
           <el-upload
                   action="/file"
@@ -105,6 +111,18 @@ import {checkUsername} from '@/api/user.js'
           callback();
         }
       };
+	  // 手机号验证
+	  const validatePhone = (rule, value, callback) => {
+	    if (value === "") {
+	      callback(new Error("请输入手机号"));
+	    } else {
+	      if (!/^1[3456789]\d{9}$/.test(value)) {
+	        callback(new Error("请输入正确的手机号"));
+	      } else {
+	        callback();
+	      }
+	    }
+	   }; 
       return{
         loginForm:{
            username:'qxf',
@@ -126,6 +144,8 @@ import {checkUsername} from '@/api/user.js'
           username:'',
           password:'',
           checkPass:'',
+		  phone: '',
+		  email: '',
           avatar:'',
         },
         registerRules: {
@@ -138,6 +158,11 @@ import {checkUsername} from '@/api/user.js'
           checkPass: [
             { validator: validatePass2, trigger: 'blur' }
           ],
+		  phone: [{ validator: validatePhone, trigger: "change" }],
+		  email: [
+		    { required: true, message: '请输入邮箱地址' },
+		    { type: 'email', message: '请输入正确的邮箱地址',trigger: 'blur' }
+		  ],
         },
         uploadDisabled:false,
         //上传的文件信息列表
@@ -222,9 +247,12 @@ import {checkUsername} from '@/api/user.js'
             userRegister(this.registerForm).then(resp=>{
               if (resp){
                 this.registerDialogVisible=false;
+				this.$message.success("注册成功，请登录！");
                 location.reload();//刷新页面，清空注册界面的上传组件中的图片
               }
-            })
+            }).catch(e => {
+				this.$message.error("注册失败！");
+			})
           } else {
             this.$message.error("请正确填写信息！");
             console.log('error submit!!');
