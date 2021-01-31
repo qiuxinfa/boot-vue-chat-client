@@ -71,14 +71,14 @@
 		    <el-input v-model="userInfo.email" autocomplete="off"></el-input>
 		</el-form-item>
 	    <el-form-item label="用户头像：" :label-width="formLabelWidth">
-			<el-image :src="userInfo.avatar"
+			<el-image v-if="userInfo.avatar" :src="userInfo.avatar"
 								:preview-src-list="[user.avatar]"
 								class="img">
 				<div slot="error" class="image-slot">
 					<i class="el-icon-picture-outline"></i>
 				</div>
 			</el-image>
-			<el-upload
+			<el-upload v-else
 					class="upload-btn"
 					action="/file"
 					:before-upload="beforeAvatarUpload"
@@ -306,7 +306,13 @@
     }
   }
 
-
+	.img{
+		display: inline-block;
+		height: 100px;
+		width: 100px;
+		margin-top: 15px;
+	}
+		
   #moreList{
     margin: 0px;
     padding: 0px;

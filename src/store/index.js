@@ -36,7 +36,7 @@ const store =  new Vuex.Store({
 	
 	initFriends(state,data){
 		getFriendList().then(res => {
-			// debugger;
+			debugger;
 			state.friends=res.data;
 		}).catch(e => {
 			console.log("获取好友列表失败")
@@ -148,9 +148,34 @@ const store =  new Vuex.Store({
      * @param context 与store实例具有相同方法和属性的context对象
      */
     connect(context){
+	  let currentUserId = context.state.currentUser.id;	
       //连接Stomp站点
       context.state.stomp=Stomp.over(new SockJS('/qxf/chat'));
       context.state.stomp.connect({},success=>{
+		
+		// 订阅指定群聊id的消息  
+		function subGroupMsg(subRoomId){
+			let subGroup = "/topic/rooms/"+subRoomId+"/"+currentUserId;
+			// debugger;
+			context.state.stomp.subscribe(subGroup,msg=>{
+				// debugger
+			  //接收到的消息数据
+			  let receiveMsg=JSON.parse(msg.body);
+			  receiveMsg.cacheKey = currentUserId+"#"+receiveMsg.roomId;
+			  // console.log("收到消息"+receiveMsg);
+			  //当前点击的聊天界面不是群聊,默认为消息未读
+			  let notRead = context.state.currentSession.roomId != receiveMsg.roomId;
+			  if (notRead){
+			    Vue.set(context.state.isDot,receiveMsg.cacheKey,true);
+			  }
+			  // 不是自己发的消息，才将服务端转发的消息进行存储
+			  if(receiveMsg && receiveMsg.fromUserId != currentUserId){
+				  //提交消息记录
+				  context.commit('addMessage',receiveMsg);
+			   }
+			});
+		}
+		
         /**
          * 订阅系统广播通知消息
          */
@@ -161,9 +186,77 @@ const store =  new Vuex.Store({
               message: msg.body.substr(5),
               position:"top-right"
             });
-            //更新用户列表（的登录状态）
-            // context.commit('GET_USERS');
         });
+		
+        /**
+         * 订阅好友上下线消息
+         */
+		let myFriends = context.state.friends;
+		if(myFriends && myFriends.length > 0){
+			for(let i=0;i<myFriends.length;i++){
+				context.state.stomp.subscribe("/topic/online/"+myFriends[i].friendId,msg=>{
+				    Notification.info({
+				      title: '好友状态通知',
+				      message: msg.body,
+				      position:"top-right"
+				    });
+					// 更新好友列表的在线状态
+					context.commit('initFriends')
+				});
+			}
+		}
+		/**
+		 * 订阅添加好友请求消息
+		 */
+		context.state.stomp.subscribe("/topic/newFriends/"+currentUserId,msg=>{
+			let obj = JSON.parse(msg.body);
+			Notification.info({
+			  title: '系统消息',
+			  message: obj.msg,
+			  position:"top-right"
+			});
+			// 更新 新朋友 列表
+			debugger;
+			if(obj.code == 200 && obj.data){
+				context.state.newFriends.push(obj.data);
+			}
+		});
+		/**
+		 * 订阅好友通过消息（自己请求添加别人为好友，对方同意了，收到消息就可以刷新好友列表了）
+		 */
+		context.state.stomp.subscribe("/topic/friends/"+currentUserId,msg=>{
+			let obj = JSON.parse(msg.body);
+			Notification.info({
+			  title: '系统消息',
+			  message: obj.msg,
+			  position:"top-right"
+			});
+			// 更新好友列表
+			debugger;
+			if(obj.code == 200 && obj.data){
+				context.state.friends.push(obj.data);
+			}
+		});
+		/**
+		 * 订阅被拉进群聊的消息
+		 */
+		context.state.stomp.subscribe("/topic/rooms/"+currentUserId,msg=>{
+			let obj = JSON.parse(msg.body);
+			if(obj.data.masterId != currentUserId){
+				Notification.info({
+				  title: '系统消息',
+				  message: obj.msg,
+				  position:"top-right"
+				});
+			}
+			// 刷新群聊列表
+			if(obj.code == 200 && obj.data){
+				// 订阅群聊消息
+				subGroupMsg(obj.data.id);
+				// 追加到群聊列表
+				context.state.rooms.push(obj.data);
+			}
+		});		
         /**
          * 订阅群聊消息
          */
@@ -171,23 +264,7 @@ const store =  new Vuex.Store({
 		if(myRooms && myRooms.length > 0){
 			// 遍历所有的群聊，进行消息订阅
 			for(let i=0;i<myRooms.length;i++){
-				context.state.stomp.subscribe("/topic/rooms/"+myRooms[i].roomId,msg=>{
-					// debugger
-				  //接收到的消息数据
-				  let receiveMsg=JSON.parse(msg.body);
-				  receiveMsg.cacheKey = context.state.currentUser.id+"#"+receiveMsg.roomId;
-				  // console.log("收到消息"+receiveMsg);
-				  //当前点击的聊天界面不是群聊,默认为消息未读
-				  let notRead = context.state.currentSession.roomId != receiveMsg.roomId;
-				  if (notRead){
-				    Vue.set(context.state.isDot,receiveMsg.cacheKey,true);
-				  }
-				  // 不是自己发的消息，才将服务端转发的消息进行存储
-				  if(receiveMsg && receiveMsg.fromUserId != context.state.currentUser.id){
-					  //提交消息记录
-					  context.commit('addMessage',receiveMsg);
-				   }
-				});
+				subGroupMsg(myRooms[i].id);
 			}
 		}
 		
@@ -195,13 +272,13 @@ const store =  new Vuex.Store({
          * 订阅私人消息
          */
 		// let subAddress = '/user/queue/chat';
-		let subAddress = '/user/'+context.state.currentUser.id+'/chat';
+		let subAddress = '/user/'+currentUserId+'/chat';
 		// debugger
         context.state.stomp.subscribe(subAddress,msg=>{
-			// debugger
+			debugger
           //接收到的消息数据
           let receiveMsg=JSON.parse(msg.body);
-		  receiveMsg.cacheKey = context.state.currentUser.id+"#"+receiveMsg.fromUserId;
+		  receiveMsg.cacheKey = currentUserId+"#"+receiveMsg.fromUserId;
           //没有选中用户或选中用户不是发来消息的那一方
           if (!context.state.currentSession||receiveMsg.fromUserId!=context.state.currentSession.userId){
             Notification.info({

@@ -1,14 +1,5 @@
 <template>
   <div id="list">
-  	<ul v-if="chatType == '群聊'">
-        <!--群聊列表-->
-		<p style="padding: 2px 4px;height: 20px">群聊列表</p>
-		<li v-for="room in rooms" :key="room.roomId" :class="{ active: currentSession? room.roomName == currentSession.roomName:false }"
-				v-on:click="changeCurrentSession(room)">
-			<!-- <img class="avatar" src="https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1268761962,3976237305&fm=26&gp=0.jpg"> -->
-			<el-badge :is-dot="isDot[user.id+'#'+room.roomId]"><p class="name">{{room.roomName}}</p></el-badge>
-		</li>
-	</ul>
 	<!--机器人-->
 <!-- 	<ul v-if="currentList=='机器人'">
 		<p style="padding: 2px 4px;height: 20px">快来和机器人聊天吧！</p>
@@ -20,6 +11,18 @@
 	</ul> -->
 
 	<el-scrollbar wrap-class="userList" wrap-style="height:600px;" view-style="height:100%;" :native="false">
+		<ul v-if="chatType == '群聊'">
+		    <!--群聊列表-->
+			<p style="padding: 2px 4px;height: 20px">群聊列表</p>
+			<li v-for="room in rooms" :key="room.id" :class="{ active: currentSession? room.name == currentSession.roomName:false }"
+					v-on:click="changeCurrentSession(room)">
+				<el-image class="avatar"
+						:src="room.avatar"
+						:alt="room.name">
+				</el-image>
+				<el-badge :is-dot="isDot[user.id+'#'+room.id]"><p class="name">{{room.name}}</p></el-badge>
+			</li>
+		</ul>
 		<!-- 好友列表 -->
 		<ul v-if="chatType == '私聊'">
 			<p style="padding: 2px 4px;height: 20px">好友列表</p>
@@ -39,9 +42,9 @@
 							</el-badge>
 							<p class="name">{{item.remark}}</p>
 						</div>
-	<!-- 					<div>
-						<el-badge :value="item.status==1?'在线':'离线'" :type="item.status==0?'danger':'info'"></el-badge>
-						</div> -->
+						<div>
+							<el-badge :value="item.isOnline==1?'在线':'离线'" :type="item.isOnline==1?'info':'danger'"></el-badge>
+						</div>
 					</div>
 			</li>
 		</ul>
@@ -116,13 +119,13 @@ export default {
 		}
 		// debugger
 		if(this.chatType == '群聊'){
-			param.roomId = item.roomId
-			param.roomName = item.roomName
+			param.roomId = item.id
+			param.roomName = item.name
 		}else if(this.chatType == '私聊'){
 			param.userId = item.friendId
 			param.username = item.remark
-			param.avatar = item.avatar
 		}
+		param.avatar = item.avatar
   		this.$store.commit('changeCurrentSession',param)
   	},
 	// 打开好友备注对话框

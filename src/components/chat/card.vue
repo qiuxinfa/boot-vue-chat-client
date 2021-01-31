@@ -95,6 +95,20 @@
 		    <el-form-item label="群聊名称：" label-width="120px">
 		        <el-input v-model="roomName" placeholder="给群聊取个名字吧" autocomplete="off"></el-input>
 		    </el-form-item>
+			<el-form-item label="群聊头像：" label-width="120px">
+				<el-image v-if="roomAvatar"  :src="roomAvatar" class="img"></el-image>
+				<el-upload v-else
+						class="upload-btn"
+						action="/file"
+						:before-upload="beforeAvatarUpload"
+						:on-success="imgSuccess"
+						:on-error="imgError"
+						:show-file-list="false"
+						accept=".jpg,.jpeg,.png,.JPG,JPEG,.PNG,.gif,.GIF"
+						>
+				  <el-button type="primary">上传群聊头像</el-button>
+				</el-upload>
+			</el-form-item>
 		  </el-form>	
 		  <span slot="footer" class="dialog-footer">
 		    <el-button type="primary" @click="confirmCreate">确认创建</el-button>
@@ -126,6 +140,7 @@ export default {
 	  friendRemark: '', // 好友备注
 	  roomNameVisible: false,
 	  roomName: '',    // 群聊名称
+	  roomAvatar: null,  // 群聊头像
 	  queryType: 0,    // 查询类型，0好友，1群聊
 	  selectedUsers: [],  // 群聊选中的用户
     }
@@ -216,19 +231,36 @@ export default {
 		  userIds += this.user.id;
 		  let param = {
 			  userIds: userIds,
-			  roomName: this.roomName
+			  name: this.roomName,
+			  avatar: this.roomAvatar
 		  };
 		  createRoom(param).then(res => {
 			  that.roomData = [];
 			  that.roomNameVisible = false;
 			  that.roomVisible = false;
-			  // 刷新群聊列表
-			  that.$store.commit('initRooms');
 		  }).catch(e => {
 			  console.log("创建群聊失败")
 		  })
 	  },
-	  
+	  //上传前
+	  beforeAvatarUpload(file) {
+	    //判断图片的格式
+	    let imgType=file.name.substring(file.name.lastIndexOf(".")+1);
+	    imgType=imgType.toLowerCase();
+	    let isImg=imgType==='jpg'|| imgType==='png'|| imgType==='jpeg'||imgType==='gif';
+	     if (!isImg){
+	       this.$message.error('上传图片格式不符合要求！');
+	     }
+	    return isImg;
+	  },
+	  // 图片上传成功
+	  imgSuccess(response, file, fileList) {
+	    this.roomAvatar = response
+	  },
+	  // 图片上传失败
+	  imgError(err, file, fileList){
+	    this.$message.error("上传失败");
+	  },
 	  
   }
 }
@@ -264,6 +296,12 @@ export default {
 		background-color: #DBD9D8;
 		border: 0;
 		margin-left: 3px;
+	}
+	.img{
+		display: inline-block;
+		height: 100px;
+		width: 100px;
+		margin-top: 15px;
 	}
 }
 </style>

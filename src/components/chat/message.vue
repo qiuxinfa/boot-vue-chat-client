@@ -2,7 +2,7 @@
   <div id="message" v-scroll-bottom="sessions">
 		<div v-if="chatType == '私聊'">
 			<ul >
-				<li v-for="entry in sessions[userChatKey]" :key="entry.msgId">
+				<li v-for="entry in sessions[userChatKey]" :key="entry.id">
 					<p class="time">
 						<span>{{entry.createTime | time}}</span>
 					</p>
@@ -17,7 +17,7 @@
 		</div>
 		<div v-else>
 		<ul>
-			<li v-for="entry in sessions[roomChatKey]" :key="entry.msgId">
+			<li v-for="entry in sessions[roomChatKey]" :key="entry.id">
 				<p class="time">
 					<span>{{entry.createTime | time}}</span>
 				</p>
