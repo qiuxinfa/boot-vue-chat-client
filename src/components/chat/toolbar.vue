@@ -78,7 +78,7 @@
 					<i class="el-icon-picture-outline"></i>
 				</div>
 			</el-image>
-			<el-upload v-else
+			<el-upload
 					class="upload-btn"
 					action="/file"
 					:before-upload="beforeAvatarUpload"

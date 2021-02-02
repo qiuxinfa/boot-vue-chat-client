@@ -9,8 +9,8 @@
 					<div class="main" :class="{self:entry.fromUserId == user.id}">
 							<p class="username">{{entry.fromUsername}}</p>
 						<img class="avatar" :src="entry.fromUserId == user.id ? user.avatar: currentSession.avatar" alt="">
-						<p v-if="entry.msgType==1" class="text">{{entry.content}}</p>
-						<img v-if="entry.msgType==2" :src="entry.content" class="img">
+						<div v-if="(entry.contentType==1)"><p class="text" v-html="entry.content"></p></div>
+						<img v-if="entry.contentType==2" :src="entry.content" class="img">
 					</div>
 				</li>
 			</ul>
@@ -24,9 +24,8 @@
 				<div class="main" :class="{self:entry.fromUserId==user.id}">
 					<p class="username">{{entry.fromUsername}}</p>
 					<img @dblclick="takeAShot" class="avatar" :src="entry.fromUserId==user.id? user.avatar:entry.fromAvatar" alt="">
-					<div v-if="(entry.msgType==1)"><p class="text" v-html="entry.content"></p></div>
-					<div v-else>
-            <!--图片预览与无法加载图片的图标-->
+					<div v-if="(entry.contentType==1)"><p class="text" v-html="entry.content"></p></div>
+					<div v-if="entry.contentType==2">
 						<el-image :src="entry.content"
 											:preview-src-list="[entry.content]"
 											class="img">
@@ -123,7 +122,7 @@ export default {
 			console.log("拍了一怕");
 			let s=fromName+"拍了拍"+toName;
 
-		}
+		},
 	}
 }
 </script>

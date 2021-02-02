@@ -6,6 +6,7 @@ import  '../utils/stomp'
 import { Notification } from 'element-ui';
 import {getFriendList,getNewFriendList} from '@/api/friend.js'
 import {getRoomList} from '@/api/room.js'
+import {getOfflineMsg,updateMsgIsRead} from '@/api/messageDetail.js'
 
 Vue.use(Vuex)
 
@@ -36,7 +37,7 @@ const store =  new Vuex.Store({
 	
 	initFriends(state,data){
 		getFriendList().then(res => {
-			debugger;
+			// debugger;
 			state.friends=res.data;
 		}).catch(e => {
 			console.log("获取好友列表失败")
@@ -75,16 +76,7 @@ const store =  new Vuex.Store({
       state.currentList=listName;
 	  state.chatType = listName;
     },
-    //保存群聊消息记录
-    addGroupMessage(state,msg){
-	  // let chatHistoryKey = state.currentUser.id+"#"+state.currentSession.roomId;
-   //    let message=state.sessions[chatHistoryKey];
-   //    if (!message){
-   //      Vue.set(state.sessions,chatHistoryKey,[]);
-   //    }
-   //    state.sessions[chatHistoryKey].push(msg)
-    },
-    //保存单聊数据
+    //保存聊天数据
     addMessage (state,msg) {
       let message=state.sessions[msg.cacheKey];
       if (!message){
@@ -95,35 +87,55 @@ const store =  new Vuex.Store({
       state.sessions[msg.cacheKey].push(msg)
     },
     /**
-     *  获取本地聊天记录，同步数据库的记录保存到localStorage中。
-     *  不刷新情况下都是读取保存再localStorage中的记录
-     * @param state
-     * @constructor
+     *  获取离线消息
      */
-    INIT_DATA (state) {
-		Vue.set(state.sessions,'群聊',{});
-        //同步数据库中的群聊数据
-  //       getRequest("/groupMsgContent/").then(resp=>{
-  //         if (resp){
-  //           Vue.set(state.sessions,'群聊',resp);
-  //         }
-  //       }).catch(e => {
+    initOfflineMsg (state) {
+		getOfflineMsg().then(res => {
+			// debugger;
+			let msgArr = res.data;
+			let currentUserId = state.currentUser.id;	
+			if(msgArr && msgArr.length > 0){
+				for(let i=0;i<msgArr.length;i++){
+					let msg = msgArr[i];
+					if(msg.msgType == '1'){
+						// 群聊消息
+						msg.cacheKey = currentUserId+"#"+msg.roomId;
+					}else{
+						// 私聊消息
+						msg.cacheKey = currentUserId+"#"+msg.fromUserId;
+					}
+					// 设置为未读
+					Vue.set(state.isDot,msg.cacheKey,true);
+					if (!state.sessions[msg.cacheKey]){
+					  //创建保存消息记录的数组
+					  Vue.set(state.sessions,msg.cacheKey,[]);
+					}
+					debugger
+					// 去重
+					if(state.sessions[msg.cacheKey].length > 0){
+						for(let i = 0;i < state.sessions[msg.cacheKey].length;i++){
+							debugger
+							if(state.sessions[msg.cacheKey][i].id != msg.id){
+								state.sessions[msg.cacheKey].push(msg);
+								// 防止重复添加
+								break;
+							}
+						}
+					}else{
+						state.sessions[msg.cacheKey].push(msg)
+					}
+					
+				}
+				// 修改为已读
+				updateMsgIsRead().then(res => {
+					console.log("消息状态更新为已读")
+				})
+			}
 			
-		// })
-		
+		}).catch(e => {
+			console.log("获取离线消息失败")
+		})
     },
-    //保存系统所有用户
-    INIT_USER(state,data){
-      state.users=data;
-    },
-    //请求并保存所有系统用户
-    // GET_USERS(state){
-    //   getRequest("/user/list").then(resp=>{
-    //     if (resp){
-    //       state.users=resp.data;
-    //     }
-    //   })
-    // }
   },
   actions:{
     /**
@@ -138,10 +150,8 @@ const store =  new Vuex.Store({
 	  context.commit('initNewFriends')
 	  // 获取群聊列表
 	  context.commit('initRooms')
-      //初始化聊天记录
-      context.commit('INIT_DATA')
-      //获取用户列表
-      // context.commit('GET_USERS')
+      //初始化离线消息
+      context.commit('initOfflineMsg')
     },
     /**
      * 实现连接服务端连接与消息订阅

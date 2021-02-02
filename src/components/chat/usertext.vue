@@ -58,17 +58,19 @@ export default {
   		   this.addMessageByClick();
   		}
   	},
-	sendMsg(msgType,msgContent){
+	sendMsg(msgContentType,msgContent){
 		let msgObj = {};
 		msgObj.content = msgContent;
 		msgObj.fromUserId = this.$store.state.currentUser.id;
 		msgObj.fromUsername = this.$store.state.currentUser.username;
 		msgObj.fromAvatar = this.$store.state.currentUser.avatar;
 		msgObj.createTime = Date.now();
-		// 1文本消息 2图片消息
-		msgObj.msgType = msgType;  
+		// 消息内容类型，1文本消息，2图片消息，3语音，4视频，5其他文件
+		msgObj.contentType = msgContentType;
 		//发送群聊消息
 		if (this.chatType == "群聊"){
+			// 消息类型，1群聊，2私聊
+			msgObj.msgType = 1;  
 			msgObj.roomId = this.currentSession.roomId;
 			msgObj.roomName = this.currentSession.roomName;
 			this.$store.state.stomp.send("/ws/groupChat",{},JSON.stringify(msgObj));
@@ -76,6 +78,7 @@ export default {
 		}
 		//发送私聊消息
 		else{
+		  msgObj.msgType = 2;  	
 		  msgObj.toUserId=this.currentSession.userId;
 		  msgObj.toUsername=this.currentSession.username;
 		  this.$store.state.stomp.send("/ws/chat",{},JSON.stringify(msgObj));
