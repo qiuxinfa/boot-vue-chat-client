@@ -24,3 +24,5 @@
 * vue-router
 * axios
 * element-ui
+
+### 感谢：https://github.com/JustCoding-Hai/subtlechat  提供了一个良好的前端页面
