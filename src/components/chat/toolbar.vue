@@ -10,9 +10,9 @@
     </el-image>
     <div id="btnBar">
       <div class="topBtnBar">
-		<el-tooltip class="item" effect="dark" content="聊天列表" placement="right">
+<!-- 		<el-tooltip class="item" effect="dark" content="聊天列表" placement="right">
 		   <el-button class="toolBtn" size="small"><i class="fa fa-comments fa-2x" aria-hidden="true"></i></el-button>
-		</el-tooltip> 
+		</el-tooltip> -->
         <el-tooltip  class="item" effect="dark" content="群聊列表" placement="right">
 			<el-button @click="chooseChatList('群聊')" class="toolBtn" size="small"><i class="fa fa-group fa-2x" aria-hidden="true"></i></el-button>
         </el-tooltip>
@@ -24,9 +24,9 @@
 			<el-button @click="chooseChatList('新朋友')" class="toolBtn" size="small"><i class="fa a fa-user-plus fa-2x" aria-hidden="true"></i></el-button>
 		  <!-- </el-badge> -->
         </el-tooltip>
-		<el-tooltip class="item" effect="dark" content="系统消息" placement="right">
+<!-- 		<el-tooltip class="item" effect="dark" content="系统消息" placement="right">
 		   <el-button class="toolBtn" size="small"><i class="fa fa-bell-o fa-2x" aria-hidden="true"></i></el-button>
-		</el-tooltip>
+		</el-tooltip> -->
       </div>
       <div class="bottomBtnBar">
         <el-tooltip class="item" effect="dark" content="个人中心" placement="right">
@@ -41,8 +41,8 @@
                    >
             <ul id="moreList">
               <li @click="showFeedbackDialog" >意见反馈</li>
-              <li>举报</li>
-              <li @click="clearChatHistory">清空聊天记录</li>
+<!--              <li>举报</li>
+              <li @click="clearChatHistory">清空聊天记录</li> -->
             </ul>
             <el-button slot="reference" class="toolBtn" size="small"><i class="fa fa-bars fa-2x" aria-hidden="true"></i></el-button>
           </el-popover>

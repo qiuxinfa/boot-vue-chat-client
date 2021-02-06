@@ -22,3 +22,19 @@ export function userRegister(data) {
     data
   })
 }
+
+export function checkEmail(data) {
+  return request({
+    url: '/auth/checkEmail',
+    method: 'post',
+    data
+  })
+}
+
+export function resetPassword(data) {
+  return request({
+    url: '/auth/resetPassword',
+    method: 'post',
+    data
+  })
+}

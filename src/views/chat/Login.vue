@@ -17,7 +17,8 @@
             <el-input type="text" @keydown.enter.native="submitLogin" v-model="loginForm.code" auto-complete="off" placeholder="请输入验证码" style="width:150px;"></el-input>
 			<img :src="verifyCode" title="点击切换验证码" style="float: right;" @click="changeverifyCode" />
           </el-form-item>
-          <el-checkbox v-model="checked" class="loginRemember"></el-checkbox><span> 记住我一周</span>
+           <el-checkbox v-model="checked" class="loginRemember"></el-checkbox><span> 记住我一周</span>
+		   <a href="##" style="float: right;text-decoration: none;" @click="forgotPass">忘记密码?</a>
           <div>
             <el-button @click="showRegistryDialog" style="width:45% ;margin-right: 15px">注册</el-button>
             <el-button type="primary" style="width:45% ;" @click="submitLogin"  v-loading.fullscreen.lock="fullscreenLoading">登录</el-button>
@@ -65,13 +66,38 @@
         <el-button type="primary" @click="submitRegisterForm('registerForm') " style="width: 100%">注册</el-button>
       </div>
     </el-dialog>
+	
+	<el-dialog title="重置密码" :visible.sync="resetPassVisible" width="30%">
+	  <el-form :model="resetPassForm" status-icon :rules="resetPassRules" ref="resetPassForm" >
+		<template v-if="resetPassForm.key">
+			<el-form-item label="密码：" :label-width="formLabelWidth" prop="password">
+			  <el-input type="password" v-model="resetPassForm.password" autocomplete="off"></el-input>
+			</el-form-item>
+			<el-form-item label="确认密码：" :label-width="formLabelWidth" prop="confirmPassword">
+			  <el-input type="password" v-model="resetPassForm.confirmPassword" autocomplete="off"></el-input>
+			</el-form-item>
+		</template>
+		<template v-else>
+			<el-form-item label="用户名：" :label-width="formLabelWidth" prop="username">
+				<el-input v-model="resetPassForm.username" placeholder="请输入用户名" autocomplete="off"></el-input>
+			</el-form-item>		
+			<el-form-item label="邮箱：" :label-width="formLabelWidth" prop="email">
+				<el-input v-model="resetPassForm.email" placeholder="注册时的邮箱" autocomplete="off"></el-input>
+			</el-form-item>			
+		</template>
+	  </el-form>
+	  <div slot="footer" class="dialog-footer">
+	    <el-button type="primary" @click="doResetPass('resetPassForm') " style="width: 100%">{{resetPassForm.key ? '重置密码' : '验证邮箱'}}</el-button>
+	  </div>
+	</el-dialog>
+	
   </el-container>
 
 
 </template>
 
 <script>
-import {login,userRegister} from '@/api/auth.js'
+import {login,userRegister,checkEmail,resetPassword} from '@/api/auth.js'
 import {checkUsername} from '@/api/user.js'
 
   export default {
@@ -164,11 +190,42 @@ import {checkUsername} from '@/api/user.js'
 		    { type: 'email', message: '请输入正确的邮箱地址',trigger: 'blur' }
 		  ],
         },
+		// 找回密码相关
+		resetPassVisible: false,
+		resetPassForm:{
+		  username: '',
+		  email: '',
+		  password:'',
+		  confirmPassword:'',
+		  key: '',
+		},
+		resetPassRules: {
+		  username:[{required:true,message:'请输入用户名',trigger:'blur'}],	
+		  email: [
+		    { required: true, message: '请输入邮箱地址' },
+		    { type: 'email', message: '请输入正确的邮箱地址',trigger: 'blur' }
+		  ],
+		},
+		
         uploadDisabled:false,
         //上传的文件信息列表
         fileList:[],
       };
     },
+	created() {
+		let url = window.location.href;
+		if(url.includes('key')){
+			// 解析url，获取key
+			// 截取key的字符串,形如："123456#/"
+			url = url.substr(url.lastIndexOf('=')+1);
+			// 去掉最后的 #/，剩下：123456
+			this.resetPassForm.key = url.substr(0,url.length-2);
+			this.forgotPass();
+		}else{
+			this.resetPassVisible = false;
+			this.registerDialogVisible = false;
+		}
+	},
     methods:{
       submitLogin(){
         this.$refs.loginForm.validate((valid) => {
@@ -260,7 +317,52 @@ import {checkUsername} from '@/api/user.js'
           }
         });
       },
-
+	  
+	  // 重置密码相关
+	  forgotPass(){
+		this.resetPassVisible = true  
+	  },
+	  doResetPass(formName){
+		  const that = this;
+		  if(that.resetPassForm.key){
+			// 校验两次密码是否一致
+			if(!that.resetPassForm.password){
+				that.$message.error("密码不能为空！");
+				return;
+			}
+			if(!that.resetPassForm.confirmPassword){
+				that.$message.error("确认密码不能为空！");
+				return;
+			}
+			if(that.resetPassForm.password != that.resetPassForm.confirmPassword){
+				that.$message.error("两次密码输入不一致！");
+				return;
+			}
+			// 重置密码 
+			resetPassword(that.resetPassForm).then(res => {
+				debugger
+				that.resetPassVisible = false;
+				that.$message.success("密码重置成功，请登录！");
+				window.location.href = 'http://localhost:8080';
+				// location.reload();
+			}).catch(e => {
+				that.$message.error("密码重置失败！");
+			})
+		  }else{
+			// 验证邮箱
+			that.$refs[formName].validate((valid) => {
+				if(valid){
+					checkEmail(that.resetPassForm).then(res => {
+						// that.$message.success(res.msg);
+						that.resetPassVisible = false;
+					}).catch(e => {
+						that.$message.error("用户名或邮箱不正确！");
+					})
+				}
+			});
+		  }
+	  },
+	  
     }
   }
 </script>
