@@ -8,6 +8,14 @@ export function getOfflineMsg(data) {
   })
 }
 
+export function getChatRecord(data) {
+  return request({
+    url: '/message/detail/getChatRecord',
+    method: 'get',
+    params: data
+  })
+}
+
 export function updateMsgIsRead() {
   return request({
     url: '/message/update',

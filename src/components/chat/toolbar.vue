@@ -99,7 +99,6 @@
 	<!-- 意见反馈 -->
     <el-dialog title="意见反馈" :visible.sync="feedBackDialogVisible" class="feedbackDialog">
       <textarea class="feedbackInput" v-model="feedBackContent">
-
       </textarea>
       <span slot="footer" class="dialog-footer">
         <el-button type="primary" @click="handleFeedbackSend">确 定</el-button>
@@ -112,6 +111,7 @@
 <script>
 	import {logout} from '@/api/auth.js'
 	import {updateUserInfo} from '@/api/user.js'
+	import {sendFeedback} from '@/api/feedback.js'
 	
   export default {
     name: "toolbar",
@@ -227,11 +227,8 @@
       handleFeedbackSend(){
         let msgObj={};
         msgObj.userId=this.user.id;
-        msgObj.username=this.user.username;
-        msgObj.username=this.user.username;
         msgObj.content=this.feedBackContent;
-        console.log(msgObj)
-        this.postRequest("/mail/feedback",msgObj).then(resp=>{
+        sendFeedback(msgObj).then(resp=>{
           if (resp) {
             this.feedBackDialogVisible = false;
           }

@@ -136,6 +136,14 @@ const store =  new Vuex.Store({
 			console.log("获取离线消息失败")
 		})
     },
+	
+	// 同步聊天记录
+	syncChatRecord(state,obj) {
+	   // console.log("同步数据：cacheKey = "+cacheKey)
+	   debugger
+       Vue.set(state.sessions,obj.cacheKey,obj.msgArr);
+	},
+	
   },
   actions:{
     /**
